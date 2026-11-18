@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cold Chain</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      padding: 2rem;
+      flex-wrap: wrap;
+    }
+    .card {
+      background: #1e293b;
+      border-radius: 12px;
+      padding: 1.5rem 2rem;
+      min-width: 180px;
+      text-align: center;
+    }
+    .value { font-size: 2.5rem; font-weight: bold; }
+    .label { opacity: .7; }
+  </style>
+</head>
+<body>
+  <div class="card"><div class="label">Température</div><div class="value" id="temp">--</div></div>
+  <div class="card"><div class="label">Humidité</div><div class="value" id="hum">--</div></div>
+  <div class="card"><div class="label">Dernière mesure</div><div class="value" id="ago">--</div></div>
+
+  <script>
+    async function refresh() {
+      try {
+        const res = await fetch("/api/get");
+        const { data } = await res.json();
+        if (!data.length) return;
+
+        const last = data.reduce((a, b) => new Date(a.dt) > new Date(b.dt) ? a : b);
+        document.getElementById("temp").textContent = `${Number(last.temp).toFixed(1)} °C`;
+        document.getElementById("hum").textContent = `${Number(last.hum).toFixed(1)} %`;
+        const measuredAt = new Date(last.dt);
+        const seconds = Math.floor((Date.now() - measuredAt) / 1000);
+        const minutes = Math.floor(seconds / 60);
+        const remainingSeconds = seconds % 60;
+        const exactTime = measuredAt.toLocaleString();
+        document.getElementById("ago").textContent =
+          `${minutes} min ${remainingSeconds} sec (${exactTime})`;
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    refresh();
+    setInterval(refresh, 5000);
+  </script>
+</body>
+</html>
