@@ -17,22 +17,42 @@ DHT11 → ESP8266/NodeMCU → Wi-Fi → API REST Django → SQLite → tableau d
 ## Prérequis sous Linux
 
 - Git
-- [mise](https://mise.jdx.dev/) avec Python `3.15.2` (version sélectionnée dans `mise.toml`)
-- [uv](https://docs.astral.sh/uv/) pour installer les dépendances dans l’environnement virtuel
+- Python compatible avec les versions indiquées dans `requirements.txt`
 
-Depuis un terminal, à la racine du dépôt :
+### Option utilisée par ce dépôt : mise + uv
+
+Le fichier `mise.toml` sélectionne Python `3.15.2` et configure automatiquement l’environnement `.venv`. Depuis la racine du dépôt :
 
 ```bash
 mise install
-uv venv --python "$(mise which python)" .venv
-uv pip install --python .venv/bin/python -r requirements.txt
+mise exec -- uv pip install -r requirements.txt
 ```
 
-`mise.toml` associe aussi automatiquement le projet à `.venv` dans les shells pris en charge par mise. Pour les commandes suivantes, activer explicitement l’environnement :
+`_.python.venv = { path = ".venv", create = true }` demande à mise de créer `.venv` s’il n’existe pas, puis de l’activer dans les shells initialisés avec mise et dans `mise exec`. uv installe les dépendances dans cet environnement. Il n’est pas nécessaire de lancer `uv venv` séparément.
+
+### Option standard : Python `venv` + pip
+
+Si tu ne veux pas utiliser mise, crée l’environnement avec Python et installe les mêmes dépendances avec pip :
 
 ```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+```
+
+Cette option utilise le Python système (`python3`) au lieu de la version sélectionnée dans `mise.toml`.
+
+### Autre option : uv sans mise
+
+Si Python et uv sont déjà installés, uv peut créer l’environnement et installer les dépendances :
+
+```bash
+uv venv --python python3 .venv
+uv pip install --python .venv/bin/python -r requirements.txt
 source .venv/bin/activate
 ```
+
+Ces méthodes sont alternatives : choisis-en une seule pour créer l’environnement et installer les dépendances.
 
 ## Configuration locale
 
