@@ -1,31 +1,35 @@
 # Backend implementation plan
 
-**Status:** Foundation implemented; incident lifecycle is next
+**Status:** First foundation implemented; incident lifecycle next
 **Architecture reference:** [Backend architecture](backend-architecture.md)
 
 This plan turns the backend proposal into staged, reviewable work. The first foundation is implemented on the branch below; see [progress checkpoint](progress.md) for the verified state and checkpoint commit.
 
 ## Branch
 
-Recommended branch name: **`feat/cold-chain-backend-v1`**
+Implementation branch: **`feat/cold-chain-backend-v1`**
 
-This is the active implementation branch. Keep changes focused on the Django backend, sensor firmware, and their documentation. Avoid mixing native mobile UI implementation into this branch; expose and verify the API contracts those clients will use.
+This is the active implementation branch. Keep changes focused on the Django backend, sensor firmware, and their documentation. Frontend planning stays in the architecture docs; implement the React app on its own branch after the [frontend readiness gate](frontend-readiness.md).
 
 ## Agent assignment
 
 ### Completed task: backend foundation and authenticated measurement ingestion
 
-Give the Agent this bounded task:
+Original bounded task prompt (completed on the implementation branch):
 
 > Implement the first backend foundation for Cold Chain in Django. Add a custom email-based user model and role field before creating any migrations for new domain models. Add refrigerator, sensor, threshold policy, and measurement models with the key invariants from `doc/backend-architecture.md`. Implement authenticated, idempotent sensor measurement ingestion and retain `/api/post` as a compatibility adapter to the same ingestion service. Add migrations and focused tests. Do not implement incident escalation, push notifications, CSV export, or frontend/mobile clients in this task. Report changed files, migration implications, tests run, and unresolved decisions.
 
 This is the highest-risk foundation because Django’s custom user model is difficult to introduce after Django’s built-in auth migrations have already been applied. The repository already has a `DHT` initial migration, so the Agent must inspect `showmigrations` and determine whether the existing SQLite database is disposable or whether a migration path is needed before changing `AUTH_USER_MODEL`. Do not assume that “before new feature migrations” makes an already-migrated database safe. Also preserve existing data/API behavior where practical and avoid silently dropping legacy `Dht11` measurements. If a data migration is not safe to automate, document a manual migration path.
 
-The work was implemented and manually verified with the ESP8266 against the local Django server. The active local database is `db-v2.sqlite3`; the original `db.sqlite3` remains untouched. Historical `Dht11` rows have not been imported.
+The task is implemented on `feat/cold-chain-backend-v1`. The local sensor-to-measurement path was verified; implementation details and migration caveats are in [progress.md](progress.md).
 
 ### Next task: temperature incident lifecycle
 
-Use the detailed Agent prompt in [progress.md](progress.md). Keep this task focused on creating and resolving temperature incidents from newly accepted measurements. Do not add notification delivery/escalation or frontend work in this phase.
+Add incident creation/resolution from accepted measurements before notification delivery. The bounded Agent prompt is in [progress.md](progress.md). Keep this step independent of frontend work and push/escalation.
+
+> On `feat/cold-chain-backend-v1`, add a temperature `Incident` model and process incident transitions atomically with newly accepted measurements. An out-of-range reading opens one incident per refrigerator and kind and links its trigger measurement and effective threshold policy. A later chronologically newer in-range reading resolves it and links the resolution measurement; threshold equality is in range. Idempotent replays must not repeat transitions, and stale readings must not resolve incidents. Enforce duplicate prevention in the database and transaction flow.
+>
+> Add focused tests for low/high excursions, inclusive boundaries, resolution, repeated abnormal readings, stale samples, idempotent replay, refrigerator-specific thresholds, and concurrent duplicate prevention. Do not add acknowledgements/comments, audit, notifications/escalation, push, CSV, or frontend work. Preserve both ingestion endpoints. Run project checks/tests and report migrations, changed files, test results, and unresolved decisions.
 
 ## Work breakdown
 
