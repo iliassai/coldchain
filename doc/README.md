@@ -5,8 +5,11 @@ This directory contains the architecture we propose to build. These documents ar
 ## Documents
 
 - [Backend architecture](backend-architecture.md): Django domain model, class diagram, API, permissions, incident lifecycle, and operational requirements.
-- [Backend implementation plan](backend-implementation-plan.md): proposed branch, implementation sequence, agent task breakdown, and merge checks.
+- [Backend implementation plan](backend-implementation-plan.md): backend phases, Agent assignments, and merge checks.
+- [Frontend readiness gate](frontend-readiness.md): the exact backend/API milestone after which React can integrate against real endpoints.
+- [Frontend implementation plan](frontend-implementation-plan.md): React + shadcn/ui milestones, branch strategy, tests, and Agent prompts.
+- [Progress checkpoint](progress.md): latest verified backend/sensor state and next task.
 
 ## Current starting point
 
-The repository currently has a small Django/DRF prototype in `DHT`, with a `Measurement`-like model, SQLite, and the legacy `/api/get` and `/api/post` routes. The backend proposal describes the next version and should be implemented incrementally. Existing routes can be kept temporarily as compatibility aliases while devices are migrated to the versioned ingestion endpoint.
+The implementation status is tracked on `feat/cold-chain-backend-v1`; the last verified checkpoint is commit `a2ca15f`. That branch has authenticated sensor ingestion, persisted measurements, and a static development dashboard page. The planning branch intentionally contains architecture and sequencing docs; see [progress](progress.md) for the implementation snapshot.
