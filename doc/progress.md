@@ -24,7 +24,7 @@ This checkpoint captures a working first backend slice and the first physical ES
 
 ## Dashboard status
 
-`/dashboard/` is expected to show no new sensor readings right now. Its template fetches `/api/get`, which still queries the historical `DHT.Dht11` table. New ingestion writes to `monitoring.Measurement`. The current readings are available in Django admin under **Monitoring → Measurements**. Wiring the dashboard to current measurements is future frontend/API work and is not part of the next task below.
+`/dashboard/` is a static development page and no longer polls the legacy `/api/get` endpoint. New ingestion writes to `monitoring.Measurement`; readings are available in Django admin under **Monitoring → Measurements**. Wiring a real dashboard to current measurements is future frontend/API work and is not part of the next task below.
 
 ## Next step: temperature incident lifecycle
 

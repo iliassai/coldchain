@@ -10,4 +10,4 @@ This directory contains the architecture we propose to build. These documents ar
 
 ## Current starting point
 
-The project now has an authenticated sensor ingestion foundation in `monitoring/`, a custom email-based user in `accounts/`, and ESP8266 firmware in `firmware/esp8266-dht11/`. The older `DHT.Dht11` model and routes remain for compatibility. The current `/dashboard/` template still reads `/api/get` and therefore the old `Dht11` table; new sensor records are visible in Django admin under **Monitoring → Measurements** until the dashboard is updated.
+The project now has an authenticated sensor ingestion foundation in `monitoring/`, a custom email-based user in `accounts/`, and ESP8266 firmware in `firmware/esp8266-dht11/`. The older `DHT.Dht11` model and routes remain for compatibility. `/dashboard/` is currently a static development page with a link to the Django admin measurements list; new sensor records are visible under **Monitoring → Measurements**.

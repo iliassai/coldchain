@@ -109,7 +109,7 @@ Autorisez le port 8000 dans le pare-feu Linux uniquement sur le réseau local de
 | GET | `http://127.0.0.1:8000/dashboard/` | Afficher le tableau de bord |
 | GET | `http://127.0.0.1:8000/admin/` | Ouvrir l’administration Django |
 
-Le tableau de bord `/dashboard/` est encore le prototype historique et lit `/api/get` (`Dht11`). Les nouvelles mesures du capteur sont visibles dans `/admin/` sous **Monitoring → Measurements**; le tableau de bord sera raccordé au nouveau modèle lors d’une tâche frontend/API ultérieure.
+Le tableau de bord `/dashboard/` est une page statique de développement pendant la construction de l’API de monitoring; elle ne lance pas de requêtes répétées. Les mesures du capteur sont visibles dans `/admin/` sous **Monitoring → Measurements**. Le tableau de bord sera raccordé au nouveau modèle lors d’une tâche frontend/API ultérieure.
 
 Avant l’ingestion, créer dans `/admin/` un réfrigérateur, un capteur lié et une politique de seuil globale (ou spécifique). Puis générer un identifiant capteur à usage unique :
 
