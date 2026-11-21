@@ -1,6 +1,6 @@
 # Cold Chain
 
-Application Django pour le projet IoT **Cold Chain** : recevoir les mesures de température et d’humidité d’un capteur DHT11 relié à un ESP8266, les enregistrer dans SQLite et les consulter par API ou dans un tableau de bord.
+Application Django pour le projet IoT **Cold Chain** : recevoir les mesures de température et d’humidité d’un capteur relié à un ESP8266, les enregistrer dans SQLite et les consulter par API ou dans un tableau de bord.
 
 ## Fonctionnement
 
@@ -8,9 +8,11 @@ Application Django pour le projet IoT **Cold Chain** : recevoir les mesures de t
 DHT11 → ESP8266/NodeMCU → Wi-Fi → API REST Django → SQLite → tableau de bord
 ```
 
-- `DHT/models.py` définit une mesure avec `temp`, `hum` et la date `dt`.
-- `DHT/serializers.py` convertit les mesures en JSON et valide les données reçues.
-- `DHT/api.py` fournit les vues de lecture et d’enregistrement, avec des alertes e-mail et Telegram facultatives lorsque leurs paramètres sont configurés.
+- `monitoring/models.py` définit les réfrigérateurs, capteurs, identifiants capteur, seuils et mesures.
+- `monitoring/` authentifie les requêtes capteur et enregistre les mesures de façon idempotente.
+- `accounts/` définit le compte utilisateur email et les rôles.
+- `DHT/` conserve les anciens chemins API pendant la migration.
+- `firmware/esp8266-dht11/` contient le sketch ESP8266, sans secrets versionnés.
 - `DHT/templates/DHT/dashboard.html` affiche la dernière mesure.
 - `projet/` contient la configuration Django.
 
@@ -62,9 +64,11 @@ Copier le modèle de variables d’environnement et le modifier localement :
 cp .env.example .env
 ```
 
-Le secret Django de développement fourni dans `.env.example` est uniquement un exemple local. Remplacez-le par une valeur aléatoire avant tout partage ou déploiement (par exemple avec `python -c 'import secrets; print(secrets.token_urlsafe(50))'`). Le fichier `.env` est ignoré par Git. Les paramètres Gmail et Telegram sont facultatifs ; laissez-les vides pour désactiver ces notifications.
+Le secret Django de développement fourni dans `.env.example` est uniquement un exemple local. Remplacez-le par une valeur aléatoire avant tout partage ou déploiement (par exemple avec `python -c 'import secrets; print(secrets.token_urlsafe(50))'`). Le fichier `.env` est ignoré par Git. Les variables Gmail et Telegram sont conservées pour une future intégration; cette première fondation n’envoie pas encore de notifications.
 
-Charger les variables dans le terminal courant puis initialiser SQLite :
+La configuration utilise `db-v2.sqlite3`. L’ancienne base `db.sqlite3` est conservée telle quelle car elle contient l’historique du prototype et a déjà appliqué les migrations Django avec le modèle utilisateur par défaut. Ne pointez pas la nouvelle version vers cette ancienne base : le changement vers `AUTH_USER_MODEL` nécessite une base fraîche ou un plan de migration de données explicite. Les mesures de l’ancienne table `Dht11` ne sont pas automatiquement copiées dans le nouveau modèle `Measurement`.
+
+Charger les variables dans le terminal courant puis initialiser la nouvelle base SQLite :
 
 ```bash
 set -a
@@ -99,18 +103,29 @@ Autorisez le port 8000 dans le pare-feu Linux uniquement sur le réseau local de
 
 | Méthode | Adresse | Utilité |
 | --- | --- | --- |
-| GET | `http://127.0.0.1:8000/api/get` | Récupérer les mesures, sous la clé JSON `data` |
-| POST | `http://127.0.0.1:8000/api/post` | Enregistrer une mesure |
+| POST | `http://127.0.0.1:8000/api/v1/ingest/measurements/` | Enregistrer une mesure avec `external_id`, `temperature`, `humidity` et `measured_at` |
+| POST | `http://127.0.0.1:8000/api/post` | Adaptateur legacy : corps `temp`/`hum`, même service sécurisé |
+| GET | `http://127.0.0.1:8000/api/get` | Lire les anciennes mesures de la table `Dht11` au format `temp`/`hum`/`dt` |
 | GET | `http://127.0.0.1:8000/dashboard/` | Afficher le tableau de bord |
 | GET | `http://127.0.0.1:8000/admin/` | Ouvrir l’administration Django |
 
-Exemple de contenu JSON pour le POST, conforme aux noms de champs utilisés dans ce dépôt :
+Le tableau de bord `/dashboard/` est encore le prototype historique et lit `/api/get` (`Dht11`). Les nouvelles mesures du capteur sont visibles dans `/admin/` sous **Monitoring → Measurements**; le tableau de bord sera raccordé au nouveau modèle lors d’une tâche frontend/API ultérieure.
 
-```json
-{"temp": 24.5, "hum": 54.0}
+Avant l’ingestion, créer dans `/admin/` un réfrigérateur, un capteur lié et une politique de seuil globale (ou spécifique). Puis générer un identifiant capteur à usage unique :
+
+```bash
+python manage.py issue_sensor_credential <sensor-uuid>
 ```
 
-La date `dt` est ajoutée automatiquement par Django. Une création réussie renvoie le code HTTP `201`. Pour une requête depuis l’ESP8266, remplacer `127.0.0.1` par l’adresse IP du PC. Les chemins actuels sont `/api/get` et `/api/post` (sans slash final) ; les exemples du tutoriel qui utilisent `/list/`, `/post/`, `temperature` et `humidity` correspondent à une autre version de l’API.
+La commande affiche une seule fois la valeur à stocker dans le firmware et révoque les anciens identifiants du capteur. Envoyer l’en-tête `Authorization: Sensor <uuid>.<secret>` et un `external_id` stable et unique par mesure; réutiliser le même identifiant lors d’une nouvelle tentative.
+
+Exemple moderne :
+
+```json
+{"external_id":"sensor-seq-1042","temperature":4.7,"humidity":54.0,"measured_at":"2026-11-21T12:00:00Z"}
+```
+
+Pour conserver le corps historique à `/api/post`, envoyer `{"temp":24.5,"hum":54.0}` avec le même en-tête d’authentification et `Idempotency-Key: sensor-seq-1042`. Le chemin reste compatible, mais les anciennes requêtes anonymes ne sont plus acceptées. La réponse legacy conserve les champs `temp`, `hum` et `dt`; la mesure est stockée dans `Measurement`, pas dans l’ancienne table `Dht11`. Une création renvoie `201`, un rejeu idempotent renvoie `200`.
 
 ## Vérification
 
@@ -119,11 +134,11 @@ python manage.py check
 python manage.py showmigrations
 ```
 
-La base `db.sqlite3` est créée localement lors de `migrate` et n’est pas destinée à être versionnée. Les dépendances Python sont décrites dans `requirements.txt`.
+La base `db-v2.sqlite3` est créée localement lors de `migrate` et n’est pas destinée à être versionnée. Les dépendances Python sont décrites dans `requirements.txt`.
 
 ## Sécurité
 
 - Ne pas committer `.env`, la base locale ou des identifiants Wi-Fi, e-mail, Telegram et API.
-- Les notifications e-mail et Telegram ne fonctionnent que si leurs variables sont configurées.
+- Cette fondation ne déclenche pas encore d’alertes e-mail ou Telegram.
 - `runserver` est le serveur de développement Django ; ne pas l’exposer à Internet ni l’utiliser en production.
 - Le dépôt contient actuellement des secrets dans un ancien commit Git. Le retrait du code ne supprime pas les valeurs de l’historique : révoquez/renouvelez immédiatement le mot de passe d’application Gmail et le jeton Telegram, puis nettoyez l’historique avant de publier ou partager le dépôt.

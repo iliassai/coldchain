@@ -1,0 +1,15 @@
+from django.contrib.auth.forms import UserChangeForm, UserCreationForm
+
+from .models import User
+
+
+class ColdChainUserCreationForm(UserCreationForm):
+    class Meta:
+        model = User
+        fields = ("email", "full_name", "role")
+
+
+class ColdChainUserChangeForm(UserChangeForm):
+    class Meta:
+        model = User
+        fields = ("email", "full_name", "role", "is_active", "is_staff", "is_superuser", "groups", "user_permissions")

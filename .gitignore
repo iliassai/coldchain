@@ -9,6 +9,9 @@ __pycache__/
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
+db-v2.sqlite3
+db-v2.sqlite3-journal
+firmware/**/secrets.h
 media
 
 # If your build process includes running collectstatic, then you probably don't need or want to include staticfiles/

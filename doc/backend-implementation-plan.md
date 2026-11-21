@@ -1,25 +1,31 @@
 # Backend implementation plan
 
-**Status:** Proposed plan
+**Status:** Foundation implemented; incident lifecycle is next
 **Architecture reference:** [Backend architecture](backend-architecture.md)
 
-This plan turns the backend proposal into staged, reviewable work. It does not create the branch or implement the backend.
+This plan turns the backend proposal into staged, reviewable work. The first foundation is implemented on the branch below; see [progress checkpoint](progress.md) for the verified state and checkpoint commit.
 
 ## Branch
 
 Recommended branch name: **`feat/cold-chain-backend-v1`**
 
-Create it from the current project branch after confirming the working tree is in the intended state. Keep the changes focused on the Django backend and backend documentation. Avoid mixing frontend or native mobile UI implementation into this branch; expose and verify the API contracts those clients will use.
+This is the active implementation branch. Keep changes focused on the Django backend, sensor firmware, and their documentation. Avoid mixing native mobile UI implementation into this branch; expose and verify the API contracts those clients will use.
 
 ## Agent assignment
 
-### First task: backend foundation and authenticated measurement ingestion
+### Completed task: backend foundation and authenticated measurement ingestion
 
 Give the Agent this bounded task:
 
 > Implement the first backend foundation for Cold Chain in Django. Add a custom email-based user model and role field before creating any migrations for new domain models. Add refrigerator, sensor, threshold policy, and measurement models with the key invariants from `doc/backend-architecture.md`. Implement authenticated, idempotent sensor measurement ingestion and retain `/api/post` as a compatibility adapter to the same ingestion service. Add migrations and focused tests. Do not implement incident escalation, push notifications, CSV export, or frontend/mobile clients in this task. Report changed files, migration implications, tests run, and unresolved decisions.
 
 This is the highest-risk foundation because Django’s custom user model is difficult to introduce after Django’s built-in auth migrations have already been applied. The repository already has a `DHT` initial migration, so the Agent must inspect `showmigrations` and determine whether the existing SQLite database is disposable or whether a migration path is needed before changing `AUTH_USER_MODEL`. Do not assume that “before new feature migrations” makes an already-migrated database safe. Also preserve existing data/API behavior where practical and avoid silently dropping legacy `Dht11` measurements. If a data migration is not safe to automate, document a manual migration path.
+
+The work was implemented and manually verified with the ESP8266 against the local Django server. The active local database is `db-v2.sqlite3`; the original `db.sqlite3` remains untouched. Historical `Dht11` rows have not been imported.
+
+### Next task: temperature incident lifecycle
+
+Use the detailed Agent prompt in [progress.md](progress.md). Keep this task focused on creating and resolving temperature incidents from newly accepted measurements. Do not add notification delivery/escalation or frontend work in this phase.
 
 ## Work breakdown
 

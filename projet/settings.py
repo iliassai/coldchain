@@ -43,9 +43,14 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "accounts.apps.AccountsConfig",
+    "monitoring.apps.MonitoringConfig",
     "DHT",
     "rest_framework",
 ]
+
+AUTH_USER_MODEL = "accounts.User"
+SENSOR_MAX_FUTURE_SKEW_SECONDS = int(os.environ.get("SENSOR_MAX_FUTURE_SKEW_SECONDS", "300"))
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -77,10 +82,14 @@ TEMPLATES = [
 WSGI_APPLICATION = "projet.wsgi.application"
 
 # Database
+DATABASE_NAME = Path(os.environ.get("DJANGO_DB_NAME", BASE_DIR / "db-v2.sqlite3"))
+if not DATABASE_NAME.is_absolute():
+    DATABASE_NAME = BASE_DIR / DATABASE_NAME
+
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "NAME": DATABASE_NAME,
     }
 }
 

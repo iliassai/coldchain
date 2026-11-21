@@ -249,6 +249,8 @@ Creating a user must trigger a password setup/invitation flow. Never return or e
 
 Do not trust a client-supplied refrigerator ID to authorize a write. Bind the device credential to one sensor/refrigerator. Require TLS, rate-limit by device, validate numeric bounds, and support key rotation and revocation. Consider request signing with timestamp/nonce if the device can support it.
 
+During migration, `/api/post` accepts the historical `temp`/`hum` body as an adapter to this same service. It still requires `Authorization: Sensor <credential-id>.<secret>` and an `Idempotency-Key` header; retries must reuse the key. It stores into the new `Measurement` table. The old `/api/get` continues to read historical `Dht11` rows until a separate read API replaces it.
+
 ### Measurements and monitoring
 
 | Method | Endpoint | Purpose / access |
