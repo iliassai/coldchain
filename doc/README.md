@@ -5,6 +5,7 @@ This directory contains the architecture we propose to build. These documents ar
 ## Documents
 
 - [Backend architecture](backend-architecture.md): Django domain model, class diagram, API, permissions, incident lifecycle, and operational requirements.
+- [Backend implementation plan](backend-implementation-plan.md): proposed branch, implementation sequence, agent task breakdown, and merge checks.
 
 ## Current starting point
 
